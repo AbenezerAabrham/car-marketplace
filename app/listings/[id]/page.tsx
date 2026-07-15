@@ -11,12 +11,14 @@ export default async function ListingDetail({ params }: { params: Promise<{ id: 
   const supabase = await createClient()
   const { data: listing } = await supabase
     .from('listings')
-    .select('*, listing_photos(storage_path, sort_order), users(phone, display_name, email_verified_at, report_count)')
+    .select('*, listing_photos(storage_path, sort_order, is_plate_photo), users(phone, display_name, email_verified_at, report_count)')
     .eq('id', id).single()
 
   if (!listing) return notFound()
 
-  const photos = (listing.listing_photos ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order)
+  const photos = (listing.listing_photos ?? [])
+    .filter((p: { is_plate_photo?: boolean }) => !p.is_plate_photo)
+    .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
   const seller = listing.users
   
   const mainPhotoUrl = photos[0]
@@ -113,6 +115,17 @@ export default async function ListingDetail({ params }: { params: Promise<{ id: 
               </div>
 
               <div className="p-3.5 bg-slate-950/60 rounded-xl space-y-0.5 border border-slate-800">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Plate</span>
+                <p className="text-sm font-bold text-amber-400/80 font-mono uppercase tracking-wider">
+                  {listing.plate_number
+                    ? listing.plate_verified
+                      ? `${String(listing.plate_number).slice(0, 2)}•••${String(listing.plate_number).slice(-2)}`
+                      : listing.plate_number
+                    : 'N/A'}
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-slate-950/60 rounded-xl space-y-0.5 border border-slate-800">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">VIN</span>
                 <p className="text-sm font-bold text-amber-400/80 font-mono uppercase tracking-wider">
                   {listing.vin || 'N/A'}
@@ -169,7 +182,8 @@ export default async function ListingDetail({ params }: { params: Promise<{ id: 
                 <div className="flex items-center">
                   <TrustStrip 
                     userVerified={!!seller?.email_verified_at} 
-                    reportCount={seller?.report_count ?? 0} 
+                    reportCount={seller?.report_count ?? 0}
+                    plateVerified={!!listing.plate_verified}
                   />
                 </div>
               </div>

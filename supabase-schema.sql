@@ -11,6 +11,7 @@ create table if not exists users (
   phone text,
   display_name text not null default '',
   email_verified_at timestamptz,
+  phone_verified_at timestamptz,
   report_count int not null default 0,
   created_at timestamptz default now()
 );
@@ -24,6 +25,8 @@ create policy "users can insert own profile" on users for insert with check (aut
 
 drop policy if exists "public read users for listings" on users;
 create policy "public read users for listings" on users for select using (true);
+
+create unique index if not exists idx_users_verified_phone on users (phone) where phone_verified_at is not null and phone is not null;
 
 -- 2. Listings table
 create table if not exists listings (
@@ -39,6 +42,11 @@ create table if not exists listings (
   condition text not null check (condition in ('new','used_excellent','used_good','used_fair')),
   description text,
   vin text,
+  plate_number text,
+  plate_verified boolean not null default false,
+  plate_ocr_confidence float,
+  plate_verification_status text not null default 'pending'
+    check (plate_verification_status in ('pending','verified','mismatch','manual_review')),
   attribute_fingerprint text not null,
   status text not null default 'active' check (status in ('active','flagged','removed')),
   created_at timestamptz default now()
@@ -57,12 +65,15 @@ create policy "owners can insert listings" on listings for insert with check (us
 drop policy if exists "owners can update own listings" on listings;
 create policy "owners can update own listings" on listings for update using (user_id in (select id from users where auth_id = auth.uid()));
 
+create unique index if not exists idx_listings_active_plate on listings (plate_number) where status = 'active' and plate_verified = true;
+
 -- 3. Listing photos
 create table if not exists listing_photos (
   id uuid primary key default gen_random_uuid(),
   listing_id uuid not null references listings(id) on delete cascade,
   storage_path text not null,
   perceptual_hash text not null,
+  is_plate_photo boolean not null default false,
   sort_order int not null default 0,
   created_at timestamptz default now()
 );
@@ -81,7 +92,7 @@ create table if not exists duplicate_flags (
   id uuid primary key default gen_random_uuid(),
   listing_id uuid references listings(id) on delete cascade,
   matched_listing_id uuid references listings(id),
-  match_type text check (match_type in ('image','attribute','vin')),
+  match_type text check (match_type in ('image','attribute','vin','plate')),
   created_at timestamptz default now()
 );
 alter table duplicate_flags enable row level security;
@@ -132,5 +143,6 @@ create index if not exists idx_listings_fingerprint on listings(attribute_finger
 create index if not exists idx_listings_status on listings(status);
 create index if not exists idx_listings_make on listings(make);
 create index if not exists idx_listings_region on listings(location_region);
+create index if not exists idx_listings_plate on listings(plate_number);
 create index if not exists idx_listing_photos_listing_id on listing_photos(listing_id);
 create index if not exists idx_listing_photos_phash on listing_photos(perceptual_hash);

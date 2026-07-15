@@ -85,8 +85,33 @@ Once connected to GitHub via Vercel:
 | `NEXT_PUBLIC_SUPABASE_URL` | Public | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Supabase anonymous/public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Secret | Supabase service role key (server-only) |
+| `GOOGLE_VISION_API_KEY` | Secret | Plate OCR via Google Cloud Vision (~1k free/mo) |
+| `NEXT_PUBLIC_PHONE_VERIFICATION_ENABLED` | Public | Set `true` when Twilio + Supabase Phone are ready |
 
-## Troubleshooting
+## Supabase Setup
+
+1. Run `supabase-schema.sql` in the Supabase SQL Editor (fresh project).
+2. If upgrading an existing DB, also run `supabase-migration-trust.sql`.
+
+### Google OAuth (recommended sign-in)
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → APIs → Credentials → OAuth 2.0 Client ID (Web).
+2. Authorized redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+3. Supabase Dashboard → Authentication → Providers → Google → paste Client ID + Secret.
+4. Supabase → Authentication → URL Configuration → add your site URL and `http://localhost:3000/auth/callback`.
+
+### Plate verification (Google Vision)
+
+1. Enable Cloud Vision API in Google Cloud.
+2. Create an API key → set `GOOGLE_VISION_API_KEY` in Vercel.
+3. Without this key, listings work in `development` only; production requires it.
+
+### Phone verification (when ready to pay for SMS)
+
+1. Supabase → Authentication → Phone → enable Twilio, add credentials.
+2. Set `NEXT_PUBLIC_PHONE_VERIFICATION_ENABLED=true` in Vercel.
+3. Users verify at `/account`; listing requires verified phone when enabled.
+
 
 ### Build Fails
 - Check that all environment variables are set in Vercel

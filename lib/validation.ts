@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { normalizePlate } from './plate'
 
 export const listingSchema = z.object({
   make: z.string().min(1).max(50),
@@ -11,4 +12,8 @@ export const listingSchema = z.object({
   condition: z.enum(['new', 'used_excellent', 'used_good', 'used_fair']),
   description: z.string().max(2000).optional(),
   vin: z.string().length(17).optional(),
+  plateNumber: z.string().min(4).max(12).refine(
+    val => normalizePlate(val) !== null,
+    { message: 'Invalid Ethiopian plate format (e.g. AA-12345)' }
+  ),
 })

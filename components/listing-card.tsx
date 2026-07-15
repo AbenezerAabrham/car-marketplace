@@ -3,7 +3,10 @@ import Image from 'next/image'
 import TrustStrip from './trust-strip'
 
 export default function ListingCard({ listing }: { listing: any }) {
-  const photo = listing.listing_photos?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]
+  const photo = listing.listing_photos
+    ?.filter((p: { is_plate_photo?: boolean }) => !p.is_plate_photo)
+    ?.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)[0]
+    ?? listing.listing_photos?.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)[0]
   const photoUrl = photo
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listing-photos/${photo.storage_path}`
     : null
@@ -71,7 +74,8 @@ export default function ListingCard({ listing }: { listing: any }) {
           <span className="text-slate-500 font-medium">Verification Status:</span>
           <TrustStrip 
             userVerified={!!listing.users?.email_verified_at} 
-            reportCount={listing.users?.report_count ?? 0} 
+            reportCount={listing.users?.report_count ?? 0}
+            plateVerified={!!listing.plate_verified}
           />
         </div>
       </div>

@@ -36,7 +36,7 @@ export default function SellForm() {
     <div className="bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-800/80 p-6 sm:p-8 space-y-6">
       <div className="space-y-1.5">
         <h1 className="text-2xl font-black tracking-tight text-white">List Your Vehicle</h1>
-        <p className="text-sm text-slate-500">Our fingerprinting system will automatically flag duplicate or reposted listings to protect buyers from middlemen.</p>
+        <p className="text-sm text-slate-500">Plate number + photo verification prevents duplicate and fake listings.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -109,14 +109,36 @@ export default function SellForm() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className={labelClass}>VIN <span className="font-normal text-slate-600">(optional)</span></label>
-              <input name="vin" placeholder="17-char VIN" maxLength={17} className={`${inputClass} font-mono uppercase tracking-wider`} />
+              <label className={labelClass}>License Plate <span className="text-red-400/80">*</span></label>
+              <input name="plateNumber" placeholder="e.g. AA-12345" required className={`${inputClass} font-mono uppercase tracking-wider`} />
+              <p className="text-[10px] text-slate-600">Must match the plate in your photo exactly</p>
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className={labelClass}>VIN <span className="font-normal text-slate-600">(optional)</span></label>
+            <input name="vin" placeholder="17-char VIN" maxLength={17} className={`${inputClass} font-mono uppercase tracking-wider`} />
           </div>
           <div className="space-y-1.5">
             <label className={labelClass}>Description</label>
             <textarea name="description" placeholder="Describe the car's features, history, and any known issues..." rows={4} className={`${inputClass} resize-none`} />
           </div>
+        </div>
+
+        <hr className="border-slate-800/60" />
+
+        {/* Plate Photo — required for verification */}
+        <div className="space-y-3">
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-amber-500/70">Plate Verification Photo</h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Upload a clear, close photo of the license plate. Our system verifies the plate in the photo matches what you entered — this prevents fake listings.
+          </p>
+          <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-amber-900/40 border-dashed rounded-2xl cursor-pointer bg-amber-950/10 hover:bg-amber-950/20 hover:border-amber-500/40 transition duration-200 group">
+            <div className="flex flex-col items-center justify-center gap-1">
+              <span className="text-2xl">🔢</span>
+              <p className="text-xs font-semibold text-amber-400/80 group-hover:text-amber-400 transition">Plate photo (required)</p>
+            </div>
+            <input name="platePhoto" type="file" accept="image/*" required className="hidden" />
+          </label>
         </div>
 
         <hr className="border-slate-800/60" />

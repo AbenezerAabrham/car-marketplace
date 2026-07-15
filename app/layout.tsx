@@ -34,7 +34,7 @@ export default async function RootLayout({
     if (user) {
       const { data: profile } = await supabase
         .from("users")
-        .select("display_name, phone, email")
+        .select("display_name, phone, email, phone_verified_at")
         .eq("auth_id", user.id)
         .maybeSingle();
       dbUser = profile;
@@ -69,14 +69,17 @@ export default async function RootLayout({
               
               {user ? (
                 <div className="flex items-center gap-3 pl-2 border-l border-slate-800">
-                  <div className="hidden sm:flex flex-col text-right">
+                  <Link
+                    href="/account"
+                    className="hidden sm:flex flex-col text-right hover:opacity-80 transition"
+                  >
                     <span className="text-xs font-bold text-slate-200">
                       {dbUser?.display_name || "Seller"}
                     </span>
                     <span className="text-[10px] font-mono text-slate-500">
-                      {dbUser?.email || user.email}
+                      {dbUser?.phone_verified_at ? "📱 Verified" : dbUser?.email || user.email}
                     </span>
-                  </div>
+                  </Link>
                   <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold flex items-center justify-center text-sm shadow-inner uppercase">
                     {(dbUser?.display_name || "S").slice(0, 1)}
                   </div>
