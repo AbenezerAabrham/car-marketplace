@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import TrustStrip from './trust-strip'
+import { Listing } from '@/lib/types'
 
-export default function ListingCard({ listing }: { listing: any }) {
+export default function ListingCard({ listing }: { listing: Listing }) {
   const photo = listing.listing_photos
     ?.filter((p: { is_plate_photo?: boolean }) => !p.is_plate_photo)
     ?.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)[0]

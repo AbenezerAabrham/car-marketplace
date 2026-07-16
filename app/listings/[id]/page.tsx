@@ -5,6 +5,7 @@ import TrustStrip from '@/components/trust-strip'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { ListingPhoto } from '@/lib/types'
 
 export default async function ListingDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -60,7 +61,7 @@ export default async function ListingDetail({ params }: { params: Promise<{ id: 
             
             {photos.length > 1 && (
               <div className="grid grid-cols-4 gap-3">
-                {photos.slice(1).map((p: any) => (
+                {photos.slice(1).map((p: ListingPhoto) => (
                   <div key={p.storage_path} className="relative h-24 bg-slate-950 rounded-xl overflow-hidden shadow-sm border border-slate-800 hover:opacity-90 transition cursor-pointer">
                     <Image 
                       src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listing-photos/${p.storage_path}`} 
