@@ -14,9 +14,8 @@ function LoginForm() {
   const authError = searchParams.get('error')
 
   const [email, setEmail] = useState('')
-  const [otp, setOtp] = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [stage, setStage] = useState<'main' | 'otp'>('main')
+  const [stage, setStage] = useState<'main' | 'link_sent'>('main')
   const [error, setError] = useState<string | null>(
     authError === 'auth_failed' ? 'Sign in failed. Please try again.' : null
   )
@@ -36,7 +35,7 @@ function LoginForm() {
     }
   }
 
-  async function sendEmailOtp(e: React.FormEvent) {
+  async function sendMagicLink(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
@@ -45,46 +44,18 @@ function LoginForm() {
     }
 
     setLoading(true)
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextRoute)}`
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: redirectTo,
+        data: displayName.trim() ? { name: displayName.trim() } : undefined,
+      },
     })
     setLoading(false)
     if (error) return setError(error.message)
-    setStage('otp')
-  }
-
-  async function verifyEmailOtp(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    const { data, error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: 'email',
-    })
-
-    if (error || !data.user) {
-      setLoading(false)
-      return setError(error?.message ?? 'Invalid verification code')
-    }
-
-    try {
-      await ensureUserProfile(supabase, data.user)
-      if (displayName.trim()) {
-        await supabase
-          .from('users')
-          .update({ display_name: displayName.trim() })
-          .eq('auth_id', data.user.id)
-      }
-    } catch {
-      // Profile may already exist from trigger; continue
-    }
-
-    setLoading(false)
-    router.push(nextRoute)
-    router.refresh()
+    setStage('link_sent')
   }
 
   const inputClass =
@@ -96,15 +67,15 @@ function LoginForm() {
     <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800/80 shadow-2xl shadow-black/30 p-8 space-y-6">
       <div className="text-center space-y-2">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white text-2xl shadow-lg mb-1">
-          {stage === 'otp' ? '✓' : '🚗'}
+          {stage === 'link_sent' ? '✉️' : '🚗'}
         </div>
         <h1 className="text-2xl font-black tracking-tight text-white">
-          {stage === 'otp' ? 'Enter Your Code' : 'Welcome to MekinaMarket'}
+          {stage === 'link_sent' ? 'Check Your Email' : 'Welcome to MekinaMarket'}
         </h1>
         <p className="text-xs text-slate-500">
-          {stage === 'otp'
-            ? `We sent a 6-digit code to ${email}`
-            : 'Sign in with Google or your email to buy and sell verified cars'}
+          {stage === 'link_sent'
+            ? `We sent a magic sign-in link to ${email}`
+            : 'Sign in to buy and sell verified cars'}
         </p>
       </div>
 
@@ -127,11 +98,22 @@ function LoginForm() {
 
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-slate-800" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">or email</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">or email link</span>
             <div className="flex-1 h-px bg-slate-800" />
           </div>
 
-          <form onSubmit={sendEmailOtp} className="space-y-4">
+          <form onSubmit={sendMagicLink} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-400">
+                Your Name <span className="text-slate-600 font-normal">(optional)</span>
+              </label>
+              <input
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                placeholder="e.g. Abebe"
+                className={inputClass}
+              />
+            </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-400">Email Address</label>
               <input
@@ -144,49 +126,32 @@ function LoginForm() {
               />
             </div>
             <button disabled={loading} type="submit" className={buttonClass}>
-              {loading ? 'Sending code...' : '→ Send Code to Email'}
+              {loading ? 'Sending link...' : '→ Send Sign-in Link'}
             </button>
           </form>
 
           <p className="text-[10px] text-slate-600 text-center leading-relaxed">
-            Disposable and temporary email addresses are blocked. Phone verification for listing will be available soon.
+            Disposable and temporary email addresses are blocked. Click the link in the email to automatically log in.
           </p>
         </div>
       ) : (
-        <form onSubmit={verifyEmailOtp} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400">
-              Your Name <span className="text-slate-600 font-normal">(optional)</span>
-            </label>
-            <input
-              value={displayName}
-              onChange={e => setDisplayName(e.target.value)}
-              placeholder="e.g. Abebe"
-              className={inputClass}
-            />
+        <div className="text-center space-y-4">
+          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
+            <p className="text-xs text-slate-300 leading-relaxed">
+              We have sent a secure sign-in link to <strong className="text-white font-mono">{email}</strong>. 
+            </p>
+            <p className="text-xs text-slate-400">
+              Please check your inbox (and spam folder) and click the link to log in. You can close this tab once done.
+            </p>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400 text-center block">6-Digit Code</label>
-            <input
-              value={otp}
-              onChange={e => setOtp(e.target.value)}
-              placeholder="· · · · · ·"
-              maxLength={6}
-              required
-              className={`${inputClass} text-center tracking-[0.5em] text-xl font-black font-mono`}
-            />
-          </div>
-          <button disabled={loading} type="submit" className={buttonClass}>
-            {loading ? 'Verifying...' : '✓ Verify & Sign In'}
-          </button>
           <button
-            onClick={() => { setStage('main'); setOtp('') }}
+            onClick={() => { setStage('main'); setEmail('') }}
             type="button"
             className="w-full text-center text-xs text-slate-600 hover:text-slate-300 font-semibold transition"
           >
             ← Use a different email
           </button>
-        </form>
+        </div>
       )}
 
       {error && (
